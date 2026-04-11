@@ -296,7 +296,20 @@ html, body {
 </style>
 </head>
 <body>
-
+<audio id="bgMusic" loop>
+  <source src="./Un-Vizhigalil.mpeg" type="audio/mp3">
+</audio>	
+<div id="startScreen" style="
+position:fixed;inset:0;
+background:black;
+display:flex;
+justify-content:center;
+align-items:center;
+color:white;
+z-index:999;
+font-size:20px;">
+Tap to Begin ❤️
+</div>	
 <canvas id="particle-canvas"></canvas>
 <div id="bg-0" class="bg-panel bg-0 shown"></div>
 <div id="bg-1" class="bg-panel bg-1"></div>
@@ -471,6 +484,26 @@ let rafId       = null;
 let startTs     = null;
 let touchStartX = 0;
 let touchStartY = 0;
+let navLocked   = true; /* locked until overlay is dismissed */
+
+const music = document.getElementById("bgMusic");
+
+document.getElementById("startScreen").addEventListener("click", (e) => {
+  e.stopPropagation(); /* prevent bubble to global click → goTo */
+  music.play().catch(() => {});
+  const screen = document.getElementById("startScreen");
+  screen.style.transition = "opacity 0.8s ease";
+  screen.style.opacity = "0";
+  setTimeout(() => {
+    screen.style.display = "none";
+    /* unlock navigation after overlay fully fades */
+    setTimeout(() => { navLocked = false; }, 400);
+  }, 800);
+});
+
+document.getElementById("startScreen").addEventListener("touchend", (e) => {
+  e.stopPropagation();
+});
 
 /* BUILD DOTS & PEEK */
 const dots = [], peekNodes = [], peekSegs = [];
@@ -614,6 +647,7 @@ document.addEventListener('touchstart', e => {
   touchStartY = e.touches[0].clientY;
 }, { passive:true });
 document.addEventListener('touchend', e => {
+  if (navLocked) return;
   const dx = e.changedTouches[0].clientX - touchStartX;
   const dy = e.changedTouches[0].clientY - touchStartY;
   if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 45) {
@@ -622,6 +656,7 @@ document.addEventListener('touchend', e => {
 }, { passive:true });
 
 document.addEventListener('click', e => {
+  if (navLocked) return;
   if (e.target.closest('.nav-btn,.dot,#auto-btn,.photo-frame')) return;
   stopAuto(); if (current < N - 1) goTo(current + 1);
 });
