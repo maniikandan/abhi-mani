@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Our Story ❤️</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Montserrat:wght@200;300;400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --rose:  #e8547a;
+  --gold:  #d4a96a;
+  --cream: #fdf6f0;
+  --dark:  #0d0608;
+}
+
+html, body {
+  width:100%; height:100%; overflow:hidden;
+  font-family:'Montserrat',sans-serif;
+  background:var(--dark);
+  touch-action:manipulation;
+  user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+
+#particle-canvas { position:fixed;inset:0;z-index:0;pointer-events:none; }
+
+.bg-panel { position:fixed;inset:0;z-index:1;opacity:0;transition:opacity 1.2s ease; }
+.bg-panel.shown { opacity:1; }
+.bg-0{background:radial-gradient(ellipse at 30% 60%,#3b0a1f,#0d0608 70%);}
+.bg-1{background:radial-gradient(ellipse at 70% 40%,#1a0a2e,#0d0608 70%);}
+.bg-2{background:radial-gradient(ellipse at 50% 70%,#0f1f10,#0d0608 70%);}
+.bg-3{background:radial-gradient(ellipse at 20% 30%,#2a1200,#0d0608 70%);}
+.bg-4{background:radial-gradient(ellipse at 80% 60%,#1a0020,#0d0608 70%);}
+.bg-5{background:radial-gradient(ellipse at 40% 50%,#1f0a0a,#0d0608 70%);}
+.bg-6{background:radial-gradient(ellipse at 60% 40%,#200010,#0d0608 70%);}
+.bg-7{background:radial-gradient(ellipse at 45% 55%,#0a1020,#0d0608 70%);}
+.bg-8{background:radial-gradient(ellipse at 50% 50%,#1a0510,#0d0608 70%);}
+
+/* SLIDES */
+.slide {
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
+  justify-content:center;align-items:center;
+  text-align:center;
+  padding:clamp(14px,4vw,28px);
+  padding-top:clamp(52px,10vh,72px);
+  padding-bottom:clamp(90px,14vh,110px);
+  opacity:0;pointer-events:none;z-index:2;
+}
+.slide.entering { animation:slideEnter 0.85s ease forwards; }
+.slide.leaving  { animation:slideLeave 0.6s ease forwards; }
+.slide.active   { opacity:1;pointer-events:auto; }
+
+@keyframes slideEnter {
+  from{opacity:0;transform:scale(0.96) translateY(18px);}
+  to{opacity:1;transform:scale(1) translateY(0);}
+}
+@keyframes slideLeave {
+  from{opacity:1;transform:scale(1);}
+  to{opacity:0;transform:scale(1.04) translateY(-18px);}
+}
+
+/* PROGRESS */
+#progress-track {
+  position:fixed;top:0;left:0;
+  width:100%;height:3px;
+  background:rgba(255,255,255,0.08);z-index:20;
+}
+#progress-fill {
+  height:100%;width:0%;
+  background:linear-gradient(90deg,var(--rose),var(--gold));
+  transition:width 0.1s linear;
+}
+
+#slide-counter {
+  position:fixed;top:14px;left:16px;z-index:20;
+  font-size:11px;font-weight:300;letter-spacing:0.12em;
+  color:rgba(255,255,255,0.35);
+}
+
+#auto-btn {
+  position:fixed;top:10px;right:14px;z-index:20;
+  background:rgba(255,255,255,0.06);
+  border:0.5px solid rgba(255,255,255,0.2);
+  color:rgba(255,255,255,0.7);
+  font-family:'Montserrat',sans-serif;
+  font-size:10px;font-weight:300;letter-spacing:0.1em;
+  padding:6px 13px;border-radius:20px;
+  cursor:pointer;transition:all 0.3s;
+}
+#auto-btn:hover{background:rgba(232,84,122,0.2);border-color:var(--rose);color:#fff;}
+#auto-btn.playing{border-color:var(--rose);color:var(--rose);}
+
+.nav-btn {
+  position:fixed;top:50%;transform:translateY(-50%);z-index:20;
+  background:rgba(255,255,255,0.06);
+  border:0.5px solid rgba(255,255,255,0.15);
+  color:rgba(255,255,255,0.6);
+  width:clamp(32px,8vw,42px);height:clamp(32px,8vw,42px);
+  border-radius:50%;font-size:16px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.3s;
+}
+.nav-btn:hover{background:rgba(232,84,122,0.2);color:#fff;border-color:var(--rose);}
+.nav-btn:disabled{opacity:0.12;cursor:default;}
+#btn-prev{left:clamp(6px,2vw,12px);}
+#btn-next{right:clamp(6px,2vw,12px);}
+
+/* BOTTOM UI */
+#bottom-ui {
+  position:fixed;bottom:0;left:0;right:0;z-index:20;
+  display:flex;flex-direction:column;align-items:center;gap:7px;
+  padding-bottom:clamp(12px,4vw,20px);
+}
+
+#timeline-peek{display:flex;align-items:center;}
+.peek-segment{height:1px;width:clamp(16px,4vw,36px);background:rgba(255,255,255,0.12);transition:background 0.5s;}
+.peek-segment.done{background:rgba(232,84,122,0.5);}
+.peek-node{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.2);border:0.5px solid rgba(255,255,255,0.3);transition:all 0.5s;flex-shrink:0;}
+.peek-node.active{background:var(--rose);border-color:var(--rose);box-shadow:0 0 10px var(--rose);transform:scale(1.8);}
+.peek-node.done{background:rgba(232,84,122,0.6);border-color:var(--rose);}
+
+#step-dots{display:flex;gap:6px;}
+.dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.25);transition:all 0.4s;cursor:pointer;}
+.dot.active{background:var(--rose);transform:scale(1.6);box-shadow:0 0 7px var(--rose);}
+.dot.done{background:rgba(232,84,122,0.5);}
+
+#swipe-hint{font-size:9px;letter-spacing:0.2em;color:rgba(255,255,255,0.2);animation:hintFade 3s 2s ease forwards;}
+@keyframes hintFade{0%{opacity:1}100%{opacity:0}}
+
+/* SLIDE CONTENT */
+.slide-inner{
+  position:relative;z-index:5;
+  display:flex;flex-direction:column;align-items:center;
+  width:100%;max-width:580px;
+}
+.s-step{
+  font-size:clamp(9px,2vw,10px);font-weight:300;letter-spacing:0.25em;
+  color:var(--gold);opacity:0;margin-bottom:12px;text-transform:uppercase;
+  animation:textUp 0.7s 0.05s ease forwards;
+}
+.s-date{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(46px,14vw,88px);
+  font-weight:300;color:#fff;line-height:1;margin-bottom:4px;
+}
+.s-month{
+  font-size:clamp(9px,2.2vw,11px);font-weight:300;
+  letter-spacing:0.3em;color:var(--rose);
+  text-transform:uppercase;margin-bottom:18px;
+}
+.s-line{
+  width:0;height:0.5px;background:var(--rose);
+  margin:0 auto 18px;opacity:0;
+  animation:lineGrow 0.8s 0.2s ease forwards;
+}
+@keyframes lineGrow{from{width:0;opacity:0;}to{width:40px;opacity:0.6;}}
+.s-icon{
+  font-size:clamp(22px,6vw,30px);margin-bottom:16px;
+  display:inline-block;
+  animation:iconPop 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes iconPop{from{transform:scale(0) rotate(-20deg);opacity:0;}to{transform:scale(1) rotate(0);opacity:1;}}
+.s-text{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(18px,5vw,32px);font-style:italic;font-weight:300;
+  color:#fff;max-width:500px;line-height:1.5;
+  padding:0 clamp(8px,4vw,20px);
+  opacity:0;transform:translateY(14px);
+  animation:textUp 0.8s 0.3s ease forwards;
+}
+@keyframes textUp{to{opacity:1;transform:translateY(0);}}
+.s-sub{
+  font-size:clamp(9px,2.2vw,11px);font-weight:300;
+  letter-spacing:0.15em;color:rgba(255,255,255,0.35);
+  margin-top:10px;opacity:0;
+  animation:textUp 0.8s 0.6s ease forwards;
+}
+
+.ring{
+  position:absolute;border-radius:50%;
+  border:0.5px solid rgba(232,84,122,0.15);
+  animation:ringPulse 4s ease-in-out infinite;pointer-events:none;
+}
+@keyframes ringPulse{
+  0%,100%{transform:translate(-50%,-50%) scale(1);opacity:0.3;}
+  50%{transform:translate(-50%,-50%) scale(1.06);opacity:0.6;}
+}
+
+/* FINAL (day) SLIDE */
+.slide-final .s-date{
+  font-size:clamp(36px,10vw,68px);
+  background:linear-gradient(135deg,#fff 30%,var(--gold) 70%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.forever-heart{
+  font-size:clamp(34px,8vw,50px);display:inline-block;margin-bottom:10px;
+  animation:heartBeat 1.4s ease-in-out infinite;
+}
+@keyframes heartBeat{0%,100%{transform:scale(1)}15%{transform:scale(1.3)}30%{transform:scale(1)}45%{transform:scale(1.18)}}
+
+/* PHOTO SLIDE */
+.slide-photos .slide-inner { max-width:680px; }
+
+.photo-slide-header{
+  opacity:0;animation:textUp 0.7s 0.1s ease forwards;
+  font-size:clamp(9px,2vw,10px);font-weight:300;
+  letter-spacing:0.3em;color:var(--gold);text-transform:uppercase;
+  margin-bottom:10px;
+}
+
+.photo-slide-title{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(26px,7vw,46px);
+  font-style:italic;font-weight:300;color:#fff;
+  opacity:0;animation:textUp 0.8s 0.25s ease forwards;
+  margin-bottom:6px;
+}
+
+.photo-divider{
+  width:0;height:0.5px;background:var(--rose);
+  margin:0 auto 20px;opacity:0;
+  animation:lineGrow 0.8s 0.3s ease forwards;
+}
+
+.photo-pair {
+  display:flex;
+  gap:clamp(12px,3vw,24px);
+  justify-content:center;
+  align-items:flex-start;
+  opacity:0;
+  animation:textUp 0.9s 0.5s ease forwards;
+  width:100%;
+  padding:0 clamp(16px,6vw,40px);
+}
+
+.photo-frame {
+  position:relative;
+  flex:1;
+  max-width:clamp(130px,38vw,210px);
+  aspect-ratio:3/4;
+  border-radius:10px;
+  overflow:hidden;
+  border:1px solid rgba(212,169,106,0.4);
+  background:rgba(255,255,255,0.04);
+  transition:transform 0.4s ease;
+}
+.photo-frame:first-child { transform:rotate(-3deg); }
+.photo-frame:last-child  { transform:rotate(3deg); margin-top:clamp(12px,3vw,20px); }
+.photo-frame:hover:first-child { transform:rotate(-1deg) scale(1.03); }
+.photo-frame:hover:last-child  { transform:rotate(1deg) scale(1.03); }
+
+.photo-frame img {
+  width:100%;height:100%;object-fit:cover;display:block;
+}
+
+.photo-placeholder {
+  width:100%;height:100%;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:10px;padding:16px;
+}
+.photo-placeholder-icon { font-size:clamp(24px,6vw,36px); }
+.photo-placeholder-text {
+  font-size:clamp(9px,2vw,11px);
+  font-weight:300;letter-spacing:0.1em;
+  color:rgba(255,255,255,0.35);
+  text-align:center;line-height:1.5;
+}
+
+.photo-caption {
+  position:absolute;bottom:0;left:0;right:0;
+  padding:28px 8px 8px;
+  background:linear-gradient(transparent,rgba(0,0,0,0.6));
+  font-size:clamp(9px,2vw,10px);font-weight:300;
+  letter-spacing:0.1em;color:rgba(255,255,255,0.7);
+  text-align:center;
+}
+
+.photo-slide-sub {
+  font-size:clamp(9px,2.2vw,11px);font-weight:300;
+  letter-spacing:0.2em;color:rgba(255,255,255,0.3);
+  margin-top:clamp(12px,3vw,18px);
+  opacity:0;animation:textUp 0.8s 0.9s ease forwards;
+}
+
+/* PETALS */
+.petal{position:fixed;pointer-events:none;z-index:3;opacity:0;animation:petalFall linear forwards;}
+@keyframes petalFall{
+  0%{opacity:0;transform:translateY(-20px) rotate(0deg);}
+  10%{opacity:0.8;}90%{opacity:0.4;}
+  100%{opacity:0;transform:translateY(105vh) rotate(360deg);}
+}
+</style>
+</head>
+<body>
+<audio id="bgMusic" loop>
+  <source src="./abhi.mpeg" type="audio/mp3">
+</audio>	
+<div id="startScreen" style="
+position:fixed;inset:0;
+background:black;
+display:flex;
+justify-content:center;
+align-items:center;
+color:white;
+z-index:999;
+font-size:20px;">
+Tap to Begin ❤️
+</div>	
+<canvas id="particle-canvas"></canvas>
+<div id="bg-0" class="bg-panel bg-0 shown"></div>
+<div id="bg-1" class="bg-panel bg-1"></div>
+<div id="bg-2" class="bg-panel bg-2"></div>
+<div id="bg-3" class="bg-panel bg-3"></div>
+<div id="bg-4" class="bg-panel bg-4"></div>
+<div id="bg-5" class="bg-panel bg-5"></div>
+<div id="bg-6" class="bg-panel bg-6"></div>
+<div id="bg-7" class="bg-panel bg-7"></div>
+<div id="bg-8" class="bg-panel bg-8"></div>
+
+<div id="progress-track"><div id="progress-fill"></div></div>
+<div id="slide-counter">01 / 08</div>
+<button id="auto-btn">▶ AUTO</button>
+<button class="nav-btn" id="btn-prev">&#8592;</button>
+<button class="nav-btn" id="btn-next">&#8594;</button>
+
+<div id="bottom-ui">
+  <div id="timeline-peek"></div>
+  <div id="step-dots"></div>
+  <div id="swipe-hint">SWIPE OR TAP TO CONTINUE</div>
+</div>
+
+<!-- SLIDE 1 -->
+<div class="slide active" data-index="0">
+  <div class="slide-inner">
+    <div class="s-step">Chapter 01</div>
+    <div class="s-date">29/03</div>
+    <div class="s-month">March</div>
+    <div class="s-line"></div>
+    <div class="s-icon">💞</div>
+    <div class="s-text">Where our hearts meet each other for the first time</div>
+    <div class="s-sub">The beginning of everything</div>
+  </div>
+  <div class="ring" style="width:min(320px,80vw);height:min(320px,80vw);top:50%;left:50%;"></div>
+  <div class="ring" style="width:min(500px,120vw);height:min(500px,120vw);top:50%;left:50%;animation-delay:1s"></div>
+</div>
+
+<!-- SLIDE 2 -->
+<div class="slide" data-index="1">
+  <div class="slide-inner">
+    <div class="s-step">Chapter 02</div>
+    <div class="s-date">30/03</div>
+    <div class="s-month">March</div>
+    <div class="s-line"></div>
+    <div class="s-icon">💬</div>
+    <div class="s-text">First chats between us</div>
+    <div class="s-sub">Words that started a world</div>
+  </div>
+</div>
+
+<!-- SLIDE 3 -->
+<div class="slide" data-index="2">
+  <div class="slide-inner">
+    <div class="s-step">Chapter 03</div>
+    <div class="s-date">01/04</div>
+    <div class="s-month">April</div>
+    <div class="s-line"></div>
+    <div class="s-icon">👨‍👩‍👧‍👦</div>
+    <div class="s-text">Your family and my family acceptance — dates have been finalized</div>
+    <div class="s-sub">Two families, one blessing</div>
+  </div>
+</div>
+
+<!-- SLIDE 4 -->
+<div class="slide" data-index="3">
+  <div class="slide-inner">
+    <div class="s-step">Chapter 04</div>
+    <div class="s-date">12/04</div>
+    <div class="s-month">April</div>
+    <div class="s-line"></div>
+    <div class="s-icon">🤝</div>
+    <div class="s-text">I am here again at your place to show you my close family circle and make you mine</div>
+    <div class="s-sub">Hearts closer, bonds deeper</div>
+  </div>
+</div>
+
+<!-- SLIDE 5 -->
+<div class="slide" data-index="4">
+  <div class="slide-inner">
+    <div class="s-step">Chapter 05</div>
+    <div class="s-date">27/05</div>
+    <div class="s-month">May</div>
+    <div class="s-line"></div>
+    <div class="s-icon">🌿</div>
+    <div class="s-text">Mangalayam Giving Function</div>
+    <div class="s-sub">Sacred threads, sacred bond</div>
+  </div>
+</div>
+
+<!-- SLIDE 6 -->
+<div class="slide" data-index="5">
+  <div class="slide-inner">
+    <div class="s-step">Chapter 06</div>
+    <div class="s-date">29/08</div>
+    <div class="s-month">August</div>
+    <div class="s-line"></div>
+    <div class="s-icon">🌸</div>
+    <div class="s-text">Almost you are mine forever</div>
+    <div class="s-sub">One day before eternity</div>
+  </div>
+</div>
+
+<!-- SLIDE 7 — The day -->
+<div class="slide slide-final" data-index="6">
+  <div class="slide-inner">
+    <div class="s-step">Forever</div>
+    <div class="forever-heart">♥</div>
+    <div class="s-date">30/08</div>
+    <div class="s-month">August · The day</div>
+    <div class="s-line"></div>
+    <div class="s-text">The date to become as my better half</div>
+    <div class="s-sub">Forever starts here ♥</div>
+  </div>
+  <div class="ring" style="width:min(280px,75vw);height:min(280px,75vw);top:50%;left:50%;"></div>
+  <div class="ring" style="width:min(460px,110vw);height:min(460px,110vw);top:50%;left:50%;animation-delay:0.8s"></div>
+</div>
+
+<!-- SLIDE 8 — COUPLE PHOTOS -->
+<div class="slide slide-photos" data-index="7">
+  <div class="slide-inner">
+    <div class="photo-slide-header">Us, always ♥</div>
+    <div class="photo-slide-title">You &amp; Me</div>
+    <div class="photo-divider"></div>
+
+    <div class="photo-pair">
+
+      <!-- PHOTO 1 — replace src with your image path or base64 -->
+      <div class="photo-frame">
+        <img id="photo1" src="mani.jpeg" alt="Us together"
+          onerror="this.style.display='none'; document.getElementById('ph1').style.display='flex';">
+        <div id="ph1" class="photo-placeholder" style="display:none;">
+          <div class="photo-placeholder-icon">🌸</div>
+          <div class="photo-placeholder-text">Add photo 1<br>replace src=&quot;photo1.jpg&quot;</div>
+        </div>
+        <div class="photo-caption">Our first photo</div>
+      </div>
+
+      <!-- PHOTO 2 — replace src with your image path or base64 -->
+      <div class="photo-frame">
+        <img id="photo2" src="abhi.jpeg" alt="Us together"
+          onerror="this.style.display='none'; document.getElementById('ph2').style.display='flex';">
+        <div id="ph2" class="photo-placeholder" style="display:none;">
+          <div class="photo-placeholder-icon">💞</div>
+          <div class="photo-placeholder-text">Add photo 2<br>replace src=&quot;photo2.jpg&quot;</div>
+        </div>
+        <div class="photo-caption">Together forever</div>
+      </div>
+
+    </div>
+
+    <div class="photo-slide-sub">30 August onwards · Forever ♥</div>
+  </div>
+</div>
+
+<script>
+const slides    = document.querySelectorAll('.slide');
+const bgs       = document.querySelectorAll('.bg-panel');
+const fillEl    = document.getElementById('progress-fill');
+const counterEl = document.getElementById('slide-counter');
+const prevBtn   = document.getElementById('btn-prev');
+const nextBtn   = document.getElementById('btn-next');
+const autoBtn   = document.getElementById('auto-btn');
+const dotsWrap  = document.getElementById('step-dots');
+const peekWrap  = document.getElementById('timeline-peek');
+const N         = slides.length;
+const DURATION  = 5000;
+
+let current     = 0;
+let autoRunning = false;
+let rafId       = null;
+let startTs     = null;
+let touchStartX = 0;
+let touchStartY = 0;
+let navLocked   = true; /* locked until overlay is dismissed */
+
+const music = document.getElementById("bgMusic");
+
+document.getElementById("startScreen").addEventListener("click", (e) => {
+  e.stopPropagation(); /* prevent bubble to global click → goTo */
+  music.play().catch(() => {});
+  const screen = document.getElementById("startScreen");
+  screen.style.transition = "opacity 0.8s ease";
+  screen.style.opacity = "0";
+  setTimeout(() => {
+    screen.style.display = "none";
+    /* unlock navigation after overlay fully fades */
+    setTimeout(() => { navLocked = false; }, 400);
+  }, 800);
+});
+
+document.getElementById("startScreen").addEventListener("touchend", (e) => {
+  e.stopPropagation();
+});
+
+/* BUILD DOTS & PEEK */
+const dots = [], peekNodes = [], peekSegs = [];
+for (let i = 0; i < N; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 0 ? ' active' : '');
+  d.addEventListener('click', () => { stopAuto(); goTo(i); });
+  dotsWrap.appendChild(d);
+  dots.push(d);
+
+  const nd = document.createElement('div');
+  nd.className = 'peek-node' + (i === 0 ? ' active' : '');
+  peekWrap.appendChild(nd);
+  peekNodes.push(nd);
+  if (i < N - 1) {
+    const seg = document.createElement('div');
+    seg.className = 'peek-segment';
+    peekWrap.appendChild(seg);
+    peekSegs.push(seg);
+  }
+}
+
+/* PARTICLES */
+const canvas = document.getElementById('particle-canvas');
+const ctx    = canvas.getContext('2d');
+let pts = [];
+function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+resize();
+window.addEventListener('resize', resize);
+function mkPt(rand) {
+  return {
+    x: Math.random() * canvas.width,
+    y: rand ? Math.random() * canvas.height : canvas.height + 5,
+    r: Math.random() * 1.2 + 0.3,
+    vx: (Math.random() - 0.5) * 0.15,
+    vy: -(Math.random() * 0.3 + 0.05),
+    a: Math.random() * 0.5 + 0.15,
+    life: rand ? Math.random() : 0.7 + Math.random() * 0.3
+  };
+}
+for (let i = 0; i < 130; i++) pts.push(mkPt(true));
+(function loop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  pts.forEach((p, i) => {
+    p.x += p.vx; p.y += p.vy; p.life -= 0.002;
+    if (p.life <= 0 || p.y < -10) { pts[i] = mkPt(false); return; }
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(232,84,122,${p.a * p.life})`;
+    ctx.fill();
+  });
+  requestAnimationFrame(loop);
+})();
+
+/* PETALS */
+const petalChars = ['✿','❀','✾','❁','⚘'];
+setInterval(() => {
+  const p = document.createElement('div');
+  p.className = 'petal';
+  p.textContent = petalChars[Math.floor(Math.random() * petalChars.length)];
+  const dur = 7 + Math.random() * 6;
+  p.style.cssText = `left:${Math.random()*100}vw;top:-20px;font-size:${10+Math.random()*10}px;color:${Math.random()>.5?'rgba(232,84,122,0.5)':'rgba(212,169,106,0.45)'};animation-duration:${dur}s`;
+  document.body.appendChild(p);
+  setTimeout(() => p.remove(), dur * 1000);
+}, 900);
+
+/* PROGRESS */
+function startProgress() {
+  cancelProgress(); startTs = null;
+  function tick(ts) {
+    if (!startTs) startTs = ts;
+    const pct = Math.min((ts - startTs) / DURATION * 100, 100);
+    fillEl.style.width = pct + '%';
+    if (pct < 100) rafId = requestAnimationFrame(tick);
+    else if (autoRunning) advance();
+  }
+  rafId = requestAnimationFrame(tick);
+}
+function cancelProgress() {
+  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  startTs = null;
+}
+
+/* NAVIGATE */
+function goTo(idx) {
+  if (idx === current || idx < 0 || idx >= N) return;
+  const prev = current; current = idx;
+  bgs.forEach((b, i) => b.classList.toggle('shown', i === current));
+
+  slides[prev].classList.add('leaving');
+  slides[prev].addEventListener('animationend', () => slides[prev].classList.remove('active','leaving'), { once:true });
+
+  const ns = slides[current];
+  ns.classList.add('active','entering');
+  ns.addEventListener('animationend', () => ns.classList.remove('entering'), { once:true });
+
+  const resetClasses = ['s-icon','s-text','s-sub','s-line','s-step','photo-pair','photo-slide-header','photo-slide-title','photo-divider','photo-slide-sub'];
+  resetClasses.forEach(cls => ns.querySelectorAll('.'+cls).forEach(el => {
+    el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
+  }));
+
+  updateUI();
+  if (autoRunning) startProgress();
+}
+function advance() { current < N - 1 ? goTo(current + 1) : stopAuto(); }
+
+function updateUI() {
+  counterEl.textContent = String(current+1).padStart(2,'0') + ' / ' + String(N).padStart(2,'0');
+  prevBtn.disabled = current === 0;
+  nextBtn.disabled = current === N - 1;
+  dots.forEach((d,i) => d.className = 'dot'+(i===current?' active':i<current?' done':''));
+  peekNodes.forEach((n,i) => n.className = 'peek-node'+(i===current?' active':i<current?' done':''));
+  peekSegs.forEach((s,i) => s.className = 'peek-segment'+(i<current?' done':''));
+  fillEl.style.width = '0%';
+}
+
+/* AUTO */
+function startAuto() {
+  autoRunning = true; autoBtn.textContent = '⏹ STOP'; autoBtn.classList.add('playing');
+  if (current === N - 1) { current = -1; goTo(0); return; }
+  startProgress();
+}
+function stopAuto() {
+  autoRunning = false; autoBtn.textContent = '▶ AUTO'; autoBtn.classList.remove('playing');
+  cancelProgress(); fillEl.style.width = '0%';
+}
+
+/* CONTROLS */
+prevBtn.addEventListener('click', () => { stopAuto(); goTo(current - 1); });
+nextBtn.addEventListener('click', () => { stopAuto(); goTo(current + 1); });
+autoBtn.addEventListener('click', () => autoRunning ? stopAuto() : startAuto());
+
+document.addEventListener('keydown', e => {
+  if (e.key==='ArrowRight'||e.key==='ArrowDown') { stopAuto(); goTo(current+1); }
+  if (e.key==='ArrowLeft' ||e.key==='ArrowUp')   { stopAuto(); goTo(current-1); }
+  if (e.key===' ') { autoRunning ? stopAuto() : startAuto(); }
+});
+
+document.addEventListener('touchstart', e => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, { passive:true });
+document.addEventListener('touchend', e => {
+  if (navLocked) return;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 45) {
+    stopAuto(); dx < 0 ? goTo(current + 1) : goTo(current - 1);
+  }
+}, { passive:true });
+
+document.addEventListener('click', e => {
+  if (navLocked) return;
+  if (e.target.closest('.nav-btn,.dot,#auto-btn,.photo-frame')) return;
+  stopAuto(); if (current < N - 1) goTo(current + 1);
+});
+
+updateUI();
+</script>
+</body>
+</html>
